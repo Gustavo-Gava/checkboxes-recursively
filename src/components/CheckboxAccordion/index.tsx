@@ -164,17 +164,19 @@ export const CheckboxAccordion = ({ item, onClick }: CheckboxAccordionProps) => 
 
 		if (firstElement.children === undefined) return;
 
-		const newFirstElementChildren = addItemWithHierarchy([firstElement], dataSelected, item);
-		const newFirstElement = {
-			...firstElement,
-			children: newFirstElementChildren,
-		};
+		const newFirstElement = addItemWithHierarchy([firstElement], dataSelected, item);
+		// const newFirstElement = {
+		// 	...firstElement,
+		// 	children: newFirstElementChildren,
+		// };
+
+		console.log("New first element: ", newFirstElement);
 
 		const dataSelectedWithoutFirstElement = dataSelected.filter(
 			(metaItem) => metaItem.title !== firstElement.title
 		);
 
-		setDataSelected([newFirstElement, ...dataSelectedWithoutFirstElement]);
+		setDataSelected([...newFirstElement, ...dataSelectedWithoutFirstElement]);
 	};
 
 	const removeItem = () => {
