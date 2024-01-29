@@ -4,14 +4,37 @@ import { CheckboxAccordionGroup, Item } from "./components/CheckboxAccordionGrou
 import { CheckboxDataProvider } from "./components/context/CheckboxDataProvider";
 import { SelectedItems } from "./components/SelectedItems";
 import { mockedData } from "./components/const";
+import { data } from "./components/const/data";
+import { AccordionGroup } from "./components/AccordionGroup";
 
 function getParentElements(items: Item[]): Item[] {
 	const parentElements = items.map((item) => {
+		if (!item?.children) {
+			return item;
+		}
+
+		const childrenFormatted = item.children.map((child) => {
+			const childOfChildrenFormatted = child.children.map((grandchild) => {
+				return {
+					...grandchild,
+					firstElement: true,
+				};
+			});
+
+			return {
+				...child,
+				children: childOfChildrenFormatted,
+			};
+		});
+
 		return {
 			...item,
-			firstElement: true,
+			children: childrenFormatted,
 		};
 	});
+
+	console.log("data initil: ", items);
+	console.log("formatted data: ", parentElements);
 
 	return parentElements;
 }
@@ -31,15 +54,14 @@ function App() {
 		);
 	};
 
-	const dataFormatted = getParentElements(mockedData);
+	const dataFormatted = getParentElements(data.children);
 
 	return (
 		<>
 			<CheckboxDataProvider>
-				<div>
-					<h2>Items rendered: </h2>
-					<CheckboxAccordionGroup items={dataFormatted} onCheck={handleCheck} />
-				</div>
+				{dataFormatted.map((item) => (
+					<AccordionGroup item={item} />
+				))}
 
 				<SelectedItems />
 			</CheckboxDataProvider>

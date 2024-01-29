@@ -1,6 +1,7 @@
 import { PropsWithChildren, createContext, useState } from "react";
 import { Item } from "../../CheckboxAccordionGroup";
 import { mockedData } from "../../const";
+import { data } from "../../const/data.ts";
 
 export interface CheckboxDataProviderProps {
 	dataSelected: Item[];
@@ -13,6 +14,8 @@ export const CheckboxDataContext = createContext({} as CheckboxDataProviderProps
 
 export const CheckboxDataProvider = ({ children }: PropsWithChildren) => {
 	const [dataSelected, setDataSelected] = useState([] as Item[]);
+
+	console.log("Data: ", data);
 
 	return (
 		<CheckboxDataContext.Provider value={{ dataSelected, setDataSelected, items: mockedData }}>

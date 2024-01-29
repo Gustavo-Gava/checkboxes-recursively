@@ -2,10 +2,16 @@ import { CheckboxAccordion } from "../CheckboxAccordion";
 import { FirstElementProvider } from "../context/FirstElementProvider";
 
 export type Item = {
-	title: string;
+	label: string;
 	firstElement?: boolean;
-	parentLabel?: string;
 
+	// when is last child:
+	parentLabel?: string;
+	parentId: number;
+	attributeId: number;
+	surveyAttributeId: number;
+
+	// when is not last child:
 	children?: Item[];
 };
 

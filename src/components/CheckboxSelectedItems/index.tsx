@@ -35,7 +35,7 @@ export const CheckboxSelectedItems = ({ items, onCheck }: CheckboxAccordionGroup
 		<>
 			{selectedItems.map((item, index) => (
 				<>
-					<CheckboxAccordion title={item.title} onClick={() => handleCheck(item)} />
+					<CheckboxAccordion title={item.label} onClick={() => handleCheck(item)} />
 
 					{item.children && <CheckboxAccordionGroup items={item.children} onCheck={onCheck} />}
 				</>
