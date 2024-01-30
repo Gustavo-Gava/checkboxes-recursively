@@ -17,8 +17,6 @@ interface AccordionGroupProps {
 export const AccordionGroup = ({ item }: AccordionGroupProps) => {
 	const [isOpen, setIsOpen] = useState(false);
 
-	console.log("Item Children: ", item.children);
-
 	return (
 		<div>
 			<button onClick={() => setIsOpen(!isOpen)}>

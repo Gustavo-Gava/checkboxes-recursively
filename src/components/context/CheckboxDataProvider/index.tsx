@@ -15,7 +15,7 @@ export const CheckboxDataContext = createContext({} as CheckboxDataProviderProps
 export const CheckboxDataProvider = ({ children }: PropsWithChildren) => {
 	const [dataSelected, setDataSelected] = useState([] as Item[]);
 
-	console.log("Data: ", data);
+	console.log("Data: ", dataSelected);
 
 	return (
 		<CheckboxDataContext.Provider value={{ dataSelected, setDataSelected, items: mockedData }}>
