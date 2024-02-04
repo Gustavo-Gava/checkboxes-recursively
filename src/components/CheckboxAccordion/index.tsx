@@ -5,31 +5,59 @@ import { useState } from "react";
 
 interface CheckboxAccordionProps {
 	item: Item;
-	onClick: () => void;
 }
 
 const getIfIsChecked = (items: Item[], item: Item) => {
 	if (item.firstElement) {
-		return items.filter((metaItem) => metaItem.label === item.label).length > 0;
+		return items.filter((metaItem) => metaItem.label === item.label && metaItem.checked).length > 0;
 	}
 
 	for (const metaItem of items) {
 		if (metaItem.attributeId !== undefined && metaItem.attributeId === item.attributeId) {
-			return true;
+			return !!metaItem.checked;
 		}
 
 		if (metaItem.attributeId === item.attributeId && metaItem.label === item.label) {
-			return true;
+			return !!metaItem.checked;
 		}
 
 		if (metaItem.children) {
 			if (getIfIsChecked(metaItem.children, item)) {
-				return true;
+				return !!metaItem.checked;
 			}
 		}
 	}
 
 	return false;
+};
+
+const changeCheckedProperty = (items: Item[], item: Item) => {
+	items.forEach((metaItem) => {
+		if (metaItem.attributeId === item.attributeId) {
+			metaItem.checked = true;
+
+			if (metaItem.label === item.label) {
+				metaItem.checked = true;
+			}
+		}
+
+		if (getIfItemIsInArray(metaItem?.children, item)) {
+			metaItem.checked = true;
+			changeCheckedProperty(metaItem?.children, item);
+		}
+
+		if (metaItem.children) {
+			changeCheckedProperty(metaItem.children, item);
+		}
+	});
+};
+
+const getItemsWithCheckedPropertyChanged = (items: Item[], item: Item) => {
+	const itemsCopy = JSON.parse(JSON.stringify(items));
+
+	changeCheckedProperty(itemsCopy, item);
+
+	return itemsCopy;
 };
 
 const getIfItemIsInArray = (items: Item[], item: Item) => {
@@ -121,8 +149,16 @@ const getFirstElement = (items: Item[], label: string) => {
 };
 
 const removeDuplicatedItems = (array1, array2) => {
-	const array1String = array1.map((item) => JSON.stringify(item));
-	const array2String = array2.map((item) => JSON.stringify(item));
+	if (!array1?.length) {
+		return array2;
+	}
+
+	if (!array2?.length) {
+		return array1;
+	}
+
+	const array1String = array1?.map((item) => JSON.stringify(item));
+	const array2String = array2?.map((item) => JSON.stringify(item));
 	const result = new Set([...array1String, ...array2String]);
 
 	// Convert the Set back into an array
@@ -132,11 +168,14 @@ const removeDuplicatedItems = (array1, array2) => {
 function groupChildrenByLabel(items: Item[]): Item[] {
 	const groupedItems: { [label: string]: Item[] } = {};
 
-	items.forEach((item) => {
+	console.log("group children by label: ", items);
+
+	items?.forEach((item) => {
 		if (!groupedItems[item.label]) {
 			groupedItems[item.label] = [];
 		}
-		groupedItems[item.label].push(...item.children);
+
+		groupedItems[item.label].push(...item?.children);
 	});
 
 	return Object.keys(groupedItems).map((label) => ({
@@ -145,105 +184,130 @@ function groupChildrenByLabel(items: Item[]): Item[] {
 	}));
 }
 
-const addItemWithHierarchy = (
-	items: Item[],
-	selectedItems: Item[],
-	itemToBeAdded: Item
-): Item[] => {
-	const itemsCopy = JSON.parse(JSON.stringify(items));
-	const firstElementLabel = items?.[0].label;
+// const addItemWithHierarchy = (
+// 	items: Item[],
+// 	selectedItems: Item[],
+// 	itemToBeAdded: Item
+// ): Item[] => {
+// 	const itemsCopy = JSON.parse(JSON.stringify(items));
+// 	const firstElementLabel = items?.[0].label;
 
-	const getParentElement = (items: Item[], itemToFound: Item): Item | undefined => {
-		if (!items.length) return;
+// 	const getParentElement = (items: Item[], itemToFound: Item): Item | undefined => {
+// 		if (!items.length) return;
 
-		for (const item of items) {
-			const isItemInArray = getIfItemIsInChildrenArray(item.children, itemToFound);
+// 		for (const item of items) {
+// 			const isItemInArray = getIfItemIsInChildrenArray(item.children, itemToFound);
 
-			if (isItemInArray) {
-				return item;
-			}
+// 			if (isItemInArray) {
+// 				return item;
+// 			}
 
-			if (item?.children && item.children?.length > 0) {
-				const parentElement = getParentElement(item.children, itemToFound);
+// 			if (item?.children && item.children?.length > 0) {
+// 				const parentElement = getParentElement(item.children, itemToFound);
 
-				if (parentElement) {
-					return parentElement;
-				}
-			}
-		}
-	};
+// 				if (parentElement) {
+// 					return parentElement;
+// 				}
+// 			}
+// 		}
+// 	};
 
-	const parentElement = getParentElement(items, itemToBeAdded);
-	const parentElementOfSelectedItems = getParentElement(selectedItems, itemToBeAdded);
+// 	const parentElement = getParentElement(items, itemToBeAdded);
+// 	const parentElementOfSelectedItems = getParentElement(selectedItems, itemToBeAdded);
 
-	const firstElementOfSelectedItems = getFirstElement(selectedItems, firstElementLabel);
-	const itemToBeAddedHierarchy = getItemHierarchy(itemsCopy?.[0].children, itemToBeAdded);
+// 	const firstElementOfSelectedItems = getFirstElement(selectedItems, firstElementLabel);
+// 	const itemToBeAddedHierarchy = getItemHierarchy(itemsCopy?.[0].children, itemToBeAdded);
 
-	console.log("item to be added hierarchy: ", itemToBeAddedHierarchy);
-	console.log("First element of selected items: ", firstElementOfSelectedItems?.children);
+// 	const formattedItems = [
+// 		{ label: firstElementLabel, children: [itemToBeAddedHierarchy], firstElement: true },
+// 	];
 
-	const formattedItems = [
-		{ label: firstElementLabel, children: [itemToBeAddedHierarchy], firstElement: true },
-	];
+// 	const findParentElementAndAddNewItem = (items: Item[]): void => {
+// 		for (const item of items) {
+// 			if (item.label === parentElement?.label) {
+// 				console.log("parent element of selected: ", parentElementOfSelectedItems);
+// 				console.log("item: ", item);
 
-	const newItems = [] as Item[];
+// 				if (parentElementOfSelectedItems?.children) {
+// 					item.children = [...parentElementOfSelectedItems.children, itemToBeAdded];
+// 					break;
+// 				}
 
-	const arr1 = [{ label: "a" }, { label: "b" }, { label: "c" }];
-	const arr2 = [{ label: "c" }, { label: "d" }, { label: "e" }];
-	const result = removeDuplicatedItems(arr1, arr2);
+// 				item.children = [itemToBeAdded];
+// 				break;
+// 			}
 
-	const findParentElementAndAddNewItem = (items: Item[]): void => {
-		for (const item of items) {
-			if (item.label === parentElement?.label) {
-				console.log("parent element of selected: ", parentElementOfSelectedItems);
-				console.log("item: ", item);
+// 			if (item.children) {
+// 				return findParentElementAndAddNewItem(item.children);
+// 			}
+// 		}
+// 	};
 
-				if (parentElementOfSelectedItems?.children) {
-					item.children = [...parentElementOfSelectedItems.children, itemToBeAdded];
-					break;
-				}
+// 	findParentElementAndAddNewItem(formattedItems);
 
-				item.children = [itemToBeAdded];
-				break;
-			}
+// 	const mergeObjects = (items: Item[], label: string): void => {
+// 		for (const item of items) {
+// 			if (item?.label === label) {
+// 				if (getIfItemIsInChildrenArray(parentElement?.children, item)) {
+// 					if (parentElementOfSelectedItems?.children) {
+// 						console.log("entered parent element.children");
+// 						item.children = [...parentElementOfSelectedItems.children, itemToBeAdded];
+// 						return;
+// 					}
 
-			if (item.children) {
-				return findParentElementAndAddNewItem(item.children);
-			}
-		}
-	};
+// 					item.children = [itemToBeAdded];
+// 					return;
+// 				}
 
-	findParentElementAndAddNewItem(formattedItems);
+// 				const newChildren = [...item?.children, { ...parentElement, children: [itemToBeAdded] }];
+// 				const groupedChildren = groupChildrenByLabel(newChildren);
+// 				item.children = groupedChildren;
+// 				return;
+// 			}
 
-	const mergeObjects = (items: Item[], label: string): void => {
-		for (const item of items) {
-			if (item?.label === label) {
-				const newChildren = [...item?.children, { ...parentElement, children: [itemToBeAdded] }];
-				const groupedChildren = groupChildrenByLabel(newChildren);
-				item.children = groupedChildren;
-				return;
-			}
+// 			const childIsLastElement = item?.children?.find((child) => child.attributeId);
 
-			item.children = [...item?.children, itemToBeAdded];
-			item.children = removeDuplicatedItems(item.children, itemToBeAdded);
+// 			if (!childIsLastElement) {
+// 				item.children = [...item?.children, itemToBeAdded];
+// 				item.children = removeDuplicatedItems(item.children, itemToBeAdded.children);
+// 			}
 
-			if (item?.children) {
-				return mergeObjects(item.children, item?.label);
-			}
+// 			console.log("item.children: ", item);
 
-			return;
-		}
-	};
+// 			if (item?.children) {
+// 				return mergeObjects(item.children, item?.label);
+// 			}
 
-	if (firstElementOfSelectedItems?.children) {
-		mergeObjects(firstElementOfSelectedItems.children, itemToBeAddedHierarchy.label);
-		return [firstElementOfSelectedItems];
-	}
+// 			return;
+// 		}
+// 	};
 
-	return formattedItems;
+// 	if (firstElementOfSelectedItems?.children) {
+// 		const childIsLastElement = firstElementOfSelectedItems?.children?.[0]?.children?.find(
+// 			(child) => child.attributeId
+// 		);
+
+// 		console.log("is child last element: ", childIsLastElement);
+
+// 		if (!childIsLastElement) {
+// 			console.log("entered here");
+// 			mergeObjects(firstElementOfSelectedItems.children, itemToBeAddedHierarchy?.label);
+// 			return [firstElementOfSelectedItems];
+// 		}
+// 	}
+
+// 	return formattedItems;
+// };
+
+const addItemWithHierarchy = (items: Item[], itemToBeAdded: Item) => {
+	const newItems = getItemsWithCheckedPropertyChanged(items, itemToBeAdded);
+
+	console.log("new items: ", newItems);
+
+	return newItems;
 };
 
-export const CheckboxAccordion = ({ item, onClick }: CheckboxAccordionProps) => {
+export const CheckboxAccordion = ({ item }: CheckboxAccordionProps) => {
 	const [isOpen, setIsOpen] = useState(false);
 
 	const { dataSelected, setDataSelected } = useCheckboxData();
@@ -272,13 +336,13 @@ export const CheckboxAccordion = ({ item, onClick }: CheckboxAccordionProps) => 
 
 		if (firstElement.children === undefined) return;
 
-		const newFirstElement = addItemWithHierarchy([firstElement], dataSelected, item);
+		const newDataSelected = addItemWithHierarchy(dataSelected, item);
 
-		const dataSelectedWithoutFirstElement = dataSelected.filter(
-			(metaItem) => metaItem.label !== firstElement.label
-		);
+		// const dataSelectedWithoutFirstElement = dataSelected.filter(
+		// 	(metaItem) => metaItem.label !== firstElement.label
+		// );
 
-		setDataSelected([...newFirstElement, ...dataSelectedWithoutFirstElement]);
+		setDataSelected(newDataSelected);
 	};
 
 	const removeItem = () => {
@@ -301,7 +365,7 @@ export const CheckboxAccordion = ({ item, onClick }: CheckboxAccordionProps) => 
 			{isOpen && item?.children && (
 				<div style={{ marginLeft: "20px" }}>
 					{item.children.map((child) => (
-						<CheckboxAccordion item={child} onClick={onClick} />
+						<CheckboxAccordion item={child} />
 					))}
 				</div>
 			)}

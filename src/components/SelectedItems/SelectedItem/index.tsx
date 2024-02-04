@@ -5,17 +5,19 @@ interface SelectedItemProps {
 }
 
 export const SelectedItem = ({ item }: SelectedItemProps) => {
+	if (!item.checked) return <></>;
+
 	return (
-		<div style={{ marginLeft: "20px" }}>
-			<li>{item.title}</li>
+		<ul style={{ marginLeft: "20px" }}>
+			<li>{item.label}</li>
 
 			{item.children && (
 				<>
 					{item.children.map((child) => (
-						<SelectedItem key={child.title} item={child} />
+						<>{item.checked && <SelectedItem item={child} />}</>
 					))}
 				</>
 			)}
-		</div>
+		</ul>
 	);
 };

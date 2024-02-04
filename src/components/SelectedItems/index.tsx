@@ -9,7 +9,7 @@ export const SelectedItems = () => {
 			<h2>Selected Items</h2>
 			<ul>
 				{dataSelected.map((item) => (
-					<SelectedItem item={item} />
+					<>{item.checked && <SelectedItem item={item} />}</>
 				))}
 			</ul>
 		</div>

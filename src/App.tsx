@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import { CheckboxAccordionGroup, Item } from "./components/CheckboxAccordionGroup";
 import { CheckboxDataProvider } from "./components/context/CheckboxDataProvider";
@@ -7,7 +7,7 @@ import { mockedData } from "./components/const";
 import { data } from "./components/const/data";
 import { AccordionGroup } from "./components/AccordionGroup";
 
-function getParentElements(items: Item[]): Item[] {
+function setParentElements(items: Item[]): Item[] {
 	const parentElements = items.map((item) => {
 		if (!item?.children) {
 			return item;
@@ -40,25 +40,12 @@ function getParentElements(items: Item[]): Item[] {
 }
 
 function App() {
-	const [selectedItems, setSelectedItems] = useState<Item[]>([]);
-
-	const handleCheck = (item: Item) => {
-		// Check if the item is already in the state
-		const isSelected = selectedItems.includes(item);
-
-		// Update the state based on the current state of the item
-		setSelectedItems((prevSelectedItems) =>
-			isSelected
-				? prevSelectedItems.filter((selectedItem) => selectedItem !== item)
-				: [...prevSelectedItems, item]
-		);
-	};
-
-	const dataFormatted = getParentElements(data.children);
+	const dataFormatted = setParentElements(data.children);
 
 	return (
 		<>
-			<CheckboxDataProvider>
+			<CheckboxDataProvider data={dataFormatted}>
+				{/* <AccordionGroupWrapper /> */}
 				{dataFormatted.map((item) => (
 					<AccordionGroup item={item} />
 				))}
