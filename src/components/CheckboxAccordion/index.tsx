@@ -31,31 +31,49 @@ const getIfIsChecked = (items: Item[], item: Item) => {
 	return false;
 };
 
-const changeCheckedProperty = (items: Item[], item: Item) => {
-	items.forEach((metaItem) => {
-		if (metaItem.attributeId === item.attributeId) {
-			metaItem.checked = true;
+const checkAllChildren = (items: Item[], checkedValue: boolean) => {
+	items.forEach((item) => {
+		item.checked = checkedValue;
 
-			if (metaItem.label === item.label) {
-				metaItem.checked = true;
-			}
-		}
-
-		if (getIfItemIsInArray(metaItem?.children, item)) {
-			metaItem.checked = true;
-			changeCheckedProperty(metaItem?.children, item);
-		}
-
-		if (metaItem.children) {
-			changeCheckedProperty(metaItem.children, item);
+		if (item.children) {
+			checkAllChildren(item.children, checkedValue);
 		}
 	});
 };
 
-const getItemsWithCheckedPropertyChanged = (items: Item[], item: Item) => {
+const changeCheckedProperty = (items: Item[], item: Item, checkedValue: boolean) => {
+	items.forEach((metaItem) => {
+		if (metaItem.attributeId !== undefined && metaItem.attributeId === item.attributeId) {
+			metaItem.checked = checkedValue;
+
+			if (metaItem.children) {
+				checkAllChildren(metaItem.children, checkedValue);
+			}
+		}
+
+		if (metaItem.attributeId === undefined && metaItem.label === item.label) {
+			metaItem.checked = checkedValue;
+
+			if (metaItem.children) {
+				checkAllChildren(metaItem.children, checkedValue);
+			}
+		}
+
+		if (getIfItemIsInArray(metaItem?.children, item)) {
+			metaItem.checked = checkedValue;
+			changeCheckedProperty(metaItem?.children, item, checkedValue);
+		}
+
+		if (metaItem.children) {
+			changeCheckedProperty(metaItem.children, item, checkedValue);
+		}
+	});
+};
+
+const getItemsWithCheckedPropertyChanged = (items: Item[], item: Item, isAdding: boolean) => {
 	const itemsCopy = JSON.parse(JSON.stringify(items));
 
-	changeCheckedProperty(itemsCopy, item);
+	changeCheckedProperty(itemsCopy, item, isAdding);
 
 	return itemsCopy;
 };
@@ -81,108 +99,6 @@ const getIfItemIsInArray = (items: Item[], item: Item) => {
 
 	return false;
 };
-
-const formatItemHierarchy = (item: Item, itemToBeFound: Item) => {
-	if (Object.keys(item).length === 0) return;
-
-	const newItem = item;
-
-	if (item?.children === undefined) {
-		if (item.attributeId === itemToBeFound.attributeId) {
-			return item;
-		}
-	}
-
-	for (const metaItem of item?.children) {
-		if (metaItem?.children === undefined) {
-			if (metaItem.attributeId === itemToBeFound.attributeId) {
-				newItem.children = [metaItem];
-			}
-		}
-
-		const isItemInArray = getIfItemIsInArray(metaItem?.children, itemToBeFound);
-
-		if (isItemInArray) {
-			newItem.children = [metaItem];
-		}
-	}
-
-	return newItem;
-};
-
-const getItemHierarchy = (items: Item[], item: Item) => {
-	let itemHierarchy = {};
-
-	if (items === undefined) return;
-
-	for (const metaItem of items) {
-		if (metaItem?.children === undefined) {
-			if (metaItem.attributeId === item.attributeId) {
-				itemHierarchy = metaItem;
-			}
-		}
-
-		const isItemInArray = getIfItemIsInArray(metaItem?.children, item);
-
-		if (isItemInArray) {
-			itemHierarchy = metaItem;
-		}
-	}
-
-	const formattedItemHierarchy = formatItemHierarchy(itemHierarchy, item);
-
-	return formattedItemHierarchy;
-};
-
-const getIfItemIsInChildrenArray = (items: Item[], item: Item) => {
-	if (!items) {
-		return false;
-	}
-
-	const isItemInArray = items.some((metaItem) => metaItem.parentId === item.parentId);
-
-	return isItemInArray;
-};
-
-const getFirstElement = (items: Item[], label: string) => {
-	return items.find((item) => item.label === label);
-};
-
-const removeDuplicatedItems = (array1, array2) => {
-	if (!array1?.length) {
-		return array2;
-	}
-
-	if (!array2?.length) {
-		return array1;
-	}
-
-	const array1String = array1?.map((item) => JSON.stringify(item));
-	const array2String = array2?.map((item) => JSON.stringify(item));
-	const result = new Set([...array1String, ...array2String]);
-
-	// Convert the Set back into an array
-	return Array.from(result).map((item) => JSON.parse(item));
-};
-
-function groupChildrenByLabel(items: Item[]): Item[] {
-	const groupedItems: { [label: string]: Item[] } = {};
-
-	console.log("group children by label: ", items);
-
-	items?.forEach((item) => {
-		if (!groupedItems[item.label]) {
-			groupedItems[item.label] = [];
-		}
-
-		groupedItems[item.label].push(...item?.children);
-	});
-
-	return Object.keys(groupedItems).map((label) => ({
-		label: label,
-		children: groupedItems[label],
-	}));
-}
 
 // const addItemWithHierarchy = (
 // 	items: Item[],
@@ -300,9 +216,13 @@ function groupChildrenByLabel(items: Item[]): Item[] {
 // };
 
 const addItemWithHierarchy = (items: Item[], itemToBeAdded: Item) => {
-	const newItems = getItemsWithCheckedPropertyChanged(items, itemToBeAdded);
+	const newItems = getItemsWithCheckedPropertyChanged(items, itemToBeAdded, true);
 
-	console.log("new items: ", newItems);
+	return newItems;
+};
+
+const removeItemWithHierarchy = (items: Item[], itemToBeRemoved: Item) => {
+	const newItems = getItemsWithCheckedPropertyChanged(items, itemToBeRemoved, false);
 
 	return newItems;
 };
@@ -326,22 +246,12 @@ export const CheckboxAccordion = ({ item }: CheckboxAccordionProps) => {
 	};
 
 	const addItem = () => {
-		if (item.firstElement) {
-			setDataSelected((prevValue) => {
-				return [...prevValue, item];
-			});
-
-			return;
-		}
-
 		if (firstElement.children === undefined) return;
 
+		console.log("item: ", item);
+		console.log("data selected: ", dataSelected);
+
 		const newDataSelected = addItemWithHierarchy(dataSelected, item);
-
-		// const dataSelectedWithoutFirstElement = dataSelected.filter(
-		// 	(metaItem) => metaItem.label !== firstElement.label
-		// );
-
 		setDataSelected(newDataSelected);
 	};
 
@@ -353,6 +263,12 @@ export const CheckboxAccordion = ({ item }: CheckboxAccordionProps) => {
 
 			return;
 		}
+
+		if (firstElement.children === undefined) return;
+
+		const newDataSelected = removeItemWithHierarchy(dataSelected, item);
+
+		setDataSelected(newDataSelected);
 	};
 
 	return (
@@ -365,7 +281,7 @@ export const CheckboxAccordion = ({ item }: CheckboxAccordionProps) => {
 			{isOpen && item?.children && (
 				<div style={{ marginLeft: "20px" }}>
 					{item.children.map((child) => (
-						<CheckboxAccordion item={child} />
+						<CheckboxAccordion key={child.label} item={child} />
 					))}
 				</div>
 			)}
